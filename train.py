@@ -26,7 +26,6 @@ from arguments import ModelParams, PipelineParams, OptimizationParams
 from torchvision.utils import save_image
 from torch import nn
 import copy
-import torch.nn.functional as F
 try:
     from torch.utils.tensorboard import SummaryWriter
     TENSORBOARD_FOUND = True
@@ -82,31 +81,12 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
         render_pkg = render(viewpoint_cam, gaussians, pipe, bg, is_train=True, iteration=iteration)
         image, viewspace_point_tensor, visibility_filter, radii = render_pkg["render"], render_pkg["viewspace_points"], render_pkg["visibility_filter"], render_pkg["radii"]
 
-
-        #Super Resolution Loss
-        SR_image = viewpoint_cam.SR_image.cuda()
-        SR_image = SR_image.squeeze(dim=0)
-        Ll1_sr = l1_loss(image, SR_image)
-        loss_sr = (1.0 - opt.lambda_dssim) * Ll1_sr + opt.lambda_dssim * (1.0 - ssim(image, SR_image))
-        image_downsampled = F.avg_pool2d(image, kernel_size=(4, 4))
-        Ll1_lr = l1_loss(image_downsampled, gt_image)
-        loss_lr = (1.0 - opt.lambda_dssim) * Ll1_lr + opt.lambda_dssim * (1.0 - ssim(image_downsampled, gt_image))
-
-        #Original DropGaussian Loss
-        Ll1 = l1_loss(image_downsampled, gt_image)
-        ssim_value = ssim(image_downsampled, gt_image)
-        drop_loss = Ll1 + opt.lambda_dssim * (1.0 - ssim_value)
-
-        #Combined DropGaussian Loss + SR Loss
-        alpha = 0.4
-        sr_combined = (1-alpha) * loss_sr + alpha * loss_lr
-        beta = 0.7 #wight for sr_loss
-        loss = (1-beta) * drop_loss + beta * sr_combined
-
+        Ll1 = l1_loss(image, gt_image)
+        ssim_value = ssim(image, gt_image)
+        loss = Ll1 + opt.lambda_dssim * (1.0 - ssim_value)
+        
         loss.backward()
-
         iter_end.record()
-        torch.cuda.empty_cache()
 
         with torch.no_grad():
             # Progress bar
@@ -193,15 +173,12 @@ def training_report(args, tb_writer, iteration, loss, l1_loss, elapsed, testing_
                     render_pkg = renderFunc(viewpoint, scene.gaussians, *renderArgs)
                     image = render_pkg["render"]
                     gt_image = torch.clamp(viewpoint.original_image.to("cuda"), 0.0, 1.0)
-                    #modif for super resolution
-                    image_test = torch.clamp(viewpoint.image_test.to("cuda"), 0.0, 1.0)
-
                     if tb_writer and (idx < 5):
                         tb_writer.add_images(config['name'] + "_view_{}/render".format(viewpoint.image_name), image[None], global_step=iteration)
                         if iteration == testing_iterations[0]:
                             tb_writer.add_images(config['name'] + "_view_{}/ground_truth".format(viewpoint.image_name), gt_image[None], global_step=iteration)
-                    l1_test += l1_loss(image, image_test).mean().double()
-                    psnr_test += psnr(image, image_test).mean().double()
+                    l1_test += l1_loss(image, gt_image).mean().double()
+                    psnr_test += psnr(image, gt_image).mean().double()
                     torchvision.utils.save_image(image, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))
                     torchvision.utils.save_image(gt_image, os.path.join(gts_path, '{0:05d}'.format(idx) + ".png"))
                 psnr_test /= len(config['cameras'])

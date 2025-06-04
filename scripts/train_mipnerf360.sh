@@ -1,12 +1,12 @@
 exp_name='mip12'
 scenes=("bicycle" "bonsai" "counter" "garden" "kitchen" "room" "stump")
-dataset_path='dataset/mipnerf360'
+dataset_path='/home/ubuntu/Documents/dataset/mipnerf360'
 n_views=12
 
 for scene in "${scenes[@]}"
 do
   echo "Training on $scene..."
-  export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True 
+  #export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True 
   python train.py -s $dataset_path/$scene/ \
     -m output/$exp_name/$scene \
     --eval -r 8 \

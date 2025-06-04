@@ -38,7 +38,7 @@ def render_set(model_path, name, iteration, views, gaussians, pipeline, backgrou
     LPIPS = []
 
     for idx, view in enumerate(tqdm(views, desc="Rendering progress")):
-        gt = view.image_test[0:3, :, :].cuda()
+        gt = view.original_image[0:3, :, :].cuda()
         render_pkg = render(view, gaussians, pipeline, background)
         rendering = render_pkg["render"]
         torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))

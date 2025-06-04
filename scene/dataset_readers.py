@@ -34,7 +34,6 @@ class CameraInfo(NamedTuple):
     FovY: np.array
     FovX: np.array
     image: np.array
-    image_ori: np.array #add for super resolution GS
     image_path: str
     image_name: str
     width: int
@@ -137,7 +136,7 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder, path, rgb_m
         rgb_name = os.path.basename(rgb_path).split(".")[0]
         image = Image.open(rgb_path)
         
-        cam_info = CameraInfo(uid=uid, K=K, R=R, T=T, FovY=FovY, FovX=FovX, image=image, image_ori=image, image_path=image_path, #add in the argument image_ori for super resolution GS
+        cam_info = CameraInfo(uid=uid, K=K, R=R, T=T, FovY=FovY, FovX=FovX, image=image, image_path=image_path,
                 image_name=image_name, width=width, height=height, mask=mask, bounds=bounds)
         cam_infos.append(cam_info)
 
@@ -360,4 +359,3 @@ sceneLoadTypeCallbacks = {
     "Blender" : readNerfSyntheticInfo,
     "Replica" : readReplicaSceneInfo
 }
-
