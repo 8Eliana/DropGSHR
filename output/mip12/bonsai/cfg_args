@@ -1,1 +1,0 @@
-Namespace(sh_degree=3, source_path='/home/ubuntu/Documents/DropGaussian_release/dataset/mipnerf360/bonsai', model_path='output/mip12/bonsai', images='images', resolution=8, white_background=False, data_device='cuda', eval=True, n_views=12, rand_pcd=False)
