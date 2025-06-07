@@ -83,18 +83,18 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
     else:
         colors_precomp = override_color
 
-    # DropGaussian
+    # # DropGaussian
     if is_train:
         # Create initial compensation factor (1 for each Gaussian)
         compensation = torch.ones(opacity.shape[0], dtype=torch.float32, device="cuda")
 
-        # Apply DropGaussian with compensation
-        drop_rate = 0.2 * (iteration/10000)
+        drop_rate = 0.2*(iteration/10000)
         d = torch.nn.Dropout(p=drop_rate)
         compensation = d(compensation)
 
         # Apply to opacity
         opacity = opacity * compensation[:, None]
+
 
     # Rasterize visible Gaussians to image, obtain their radii (on screen). 
     rendered_image, radii = rasterizer(
